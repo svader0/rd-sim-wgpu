@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gray-Scott Reaction-Diffusion</title>
+    <link rel="stylesheet" href="https://unpkg.com/grapick/dist/grapick.min.css">
+    <link rel="stylesheet" href="static/styles.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+        onload="renderMathInElement(document.body);"></script>
+
+</head>
+<body>
+    <div class="canvas-wrapper">
+        <canvas id="canvas" width="800" height="800"></canvas>
+        <div id="map-labels" class="map-labels" style="display: none;"></div>
+    </div>
+    
+    <div class="sidebar">
+        <div class="tabs">
+            <button class="tab active" data-tab="controls">Controls</button>
+            <button class="tab" data-tab="about">About</button>
+        </div>
+        
+        <div id="controls-tab" class="tab-content active">
+        <h2>Presets</h2>
+        <div class="control-group">
+            <select id="preset">
+                <option value="0.0545,0.062">Coral (F=0.055, k=0.062)</option>
+                <option value="0.014,0.054">Bacteria (F=0.014, k=0.054)</option>
+                <option value="0.0367,0.0649">Mitosis (F=0.0367, k=0.0649)</option>
+                <option value="0.037,0.060">Fingerprint (F=0.037, k=0.060)</option>
+                <option value="0.014,0.047">Spirals (F=0.014, k=0.047)</option>
+                <option value="0.026,0.051">Unstable (F=0.026, k=0.051)</option>
+                <option value="0.006,0.031">Waves (F=0.006, k=0.031)</option>
+                <option value="0.078,0.061">Worms (F=0.078, k=0.061)</option>
+                <option value="0.016,0.055">Zebrafish (F=0.016, k=0.055)</option>
+                <option value="0.030,0.060">Solitons (F=0.030, k=0.060)</option>
+                <option value="0.029,0.057">Maze (F=0.029, k=0.057)</option>
+            </select>
+        </div>
+
+        <h2>Parameters</h2>
+        <div class="control-group">
+            <label>
+                Feed Rate (F): <span class="value-display" id="feed-value">0.055</span>
+            </label>
+            <input type="range" id="feed" min="0" max="0.1" step="0.0001" value="0.055">
+        </div>
+
+        <div class="control-group">
+            <label>
+                Kill Rate (k): <span class="value-display" id="kill-value">0.062</span>
+            </label>
+            <input type="range" id="kill" min="0" max="0.08" step="0.0001" value="0.062">
+        </div>
+
+        <div class="control-group">
+            <label>
+                Diffusion U (DU): <span class="value-display" id="du-value">1.0</span>
+            </label>
+            <input type="range" id="du" min="0.1" max="1.5" step="0.01" value="1.0">
+        </div>
+
+        <div class="control-group">
+            <label>
+                Diffusion V (DV): <span class="value-display" id="dv-value">0.5</span>
+            </label>
+            <input type="range" id="dv" min="0.1" max="1.0" step="0.01" value="0.5">
+        </div>
+
+        <div class="control-group">
+            <label>
+                Speed (steps/frame): <span class="value-display" id="speed-value">8</span>
+            </label>
+            <input type="range" id="speed" min="1" max="32" step="1" value="8">
+        </div>
+
+        <div class="control-group">
+            <label>
+                Noise Injection: <span class="value-display" id="noise-value">0.00</span>
+            </label>
+            <input type="range" id="noise" min="0" max="0.01" step="0.0001" value="0">
+        </div>
+
+        <div class="control-group">
+            <label>Boundary Condition</label>
+            <select id="boundary" required="true" >
+                <option value="1">Clamp (Fixed Edges)</option>
+                <option value="0">Wrap (Toroidal)</option>
+                <option value="2">Reflect (Mirror)</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <label style="display: flex; align-items: center; gap: 8px;">
+                <input type="checkbox" id="map-mode" style="width: auto; height: auto;">
+                <strong>Map Mode (F/k gradients)</strong>
+            </label>
+        </div>
+
+        <h2>Visuals</h2>
+        <div class="control-group">
+            <label>Laplacian Kernel</label>
+            <select id="kernel">
+                <option value="0">Default (9-point)</option>
+                <option value="1">Cross (4-point)</option>
+                <option value="2">Diagonal (4-point)</option>
+                <option value="3">Spiral (5x5 asymmetric)</option>
+                <option value="4">Other</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <label for="gradient-preset">Gradient Preset</label>
+            <select id="gradient-preset">
+                <option value="rainbow">Rainbow</option>
+                <option value="sunset">Sunset Glow</option>
+                <option value="ocean">Ocean Depths</option>
+                <option value="fire">Inferno</option>
+                <option value="neon">Neon Dreams</option>
+                <option value="forest">Forest Twilight</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <label>Color Gradient</label>
+            <div id="grapick-container" style="margin-top: 8px;"></div>
+        </div>
+
+        <div class="control-group">
+            <label style="display: flex; align-items: center; gap: 8px;">
+                <input type="checkbox" id="emboss" style="width: auto; height: auto;" checked>
+                3D Emboss Effect
+            </label>
+        </div>
+
+        <div class="control-group">
+            <label style="display: flex; align-items: center; gap: 8px;">
+                <input type="checkbox" id="invert-palette" style="width: auto; height: auto;">
+                Invert Palette
+            </label>
+        </div>
+
+        <div class="control-group">
+            <label>
+                Zoom: <span class="value-display" id="zoom-value">1.0x</span>
+            </label>
+            <input type="range" id="zoom" min="1.0" max="10" step="0.5" value="1.0">
+        </div>
+
+        <div class="control-group">
+            <label>
+                Pan X: <span class="value-display" id="pan-x-value">0.0</span>
+            </label>
+            <input type="range" id="pan-x" min="-1" max="1" step="0.01" value="0">
+        </div>
+
+        <div class="control-group">
+            <label>
+                Pan Y: <span class="value-display" id="pan-y-value">0.0</span>
+            </label>
+            <input type="range" id="pan-y" min="-1" max="1" step="0.01" value="0">
+        </div>
+
+        <h2>Controls</h2>
+        <div class="button-group">
+            <button id="pause" class="secondary">Pause</button>
+            <button id="reset" class="secondary">Reset</button>
+        </div>
+
+        <div class="button-group" style="margin-top: 8px;">
+            <button id="clear" class="secondary">Clear</button>
+        </div>
+
+        <div class="button-group" style="margin-top: 8px;">
+            <button id="random">🎲 Seed</button>
+        </div>
+
+            <div class="info">
+                <strong>How to use:</strong><br>
+                • Click and drag on the canvas to add reactants<br>
+                • Choose presets to see different patterns<br>
+                • Adjust feed/kill rates for custom patterns<br>
+                • Pause to inspect current state<br>
+                <br>
+                <strong>GPU Accelerated</strong> with WebGPU compute shaders
+            </div>
+        </div>
+        
+        <div id="about-tab" class="tab-content about-content">
+            <h2>Introduction</h2>
+            <p>
+                This simulation implements the Gray–Scott model, a classical reaction–diffusion system describing two chemical
+                species,
+                <i>U</i> and <i>V</i>, as they spread and interact across a surface. The model uses two partial differential
+                equations to track how
+                their concentrations change over time through:
+            </p>
+
+            <ul>
+                <li><strong>Diffusion:</strong> Each chemical spreads out, smoothing differences across space.</li>
+                <li><strong>Reaction:</strong> The chemicals interact through an autocatalytic process where <i>V</i> helps create
+                    more of itself by consuming <i>U</i>.</li>
+            </ul>
+
+            <p>
+                The chemistry behind the model comes from a simplified autocatalytic reaction:
+            </p>
+
+            <p style="margin-left: 1rem;">
+                <code>U + 2V → 3V</code> &nbsp;&nbsp; (self-amplification)<br>
+                <code>V → P</code> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (decay into an inert product)
+            </p>
+
+            <p>
+                In the 1980s, Peter Gray and Stephen K. Scott extended this reaction with diffusion and continuous “feed” and
+                “removal”
+                terms, allowing the system to form stable, repeating spatial structures. These types of patterns are known as
+                <strong>Turing patterns</strong>—named after Alan Turing, who first proposed that simple chemical interactions
+                coupled with diffusion
+                could spontaneously generate stripes, spots, and other biological patterns.
+            </p>
+
+            <div>
+                $$
+                \frac{\partial U}{\partial t}
+                = D_U \nabla^2 U - UV^2 + F(1 - U)
+                $$
+            </div>
+
+            <div>
+                $$
+                \frac{\partial V}{\partial t}
+                = D_V \nabla^2 V + UV^2 - (F + k)V
+                $$
+            </div>
+
+            <p>
+                In this model, <i>D<sub>U</sub></i> and <i>D<sub>V</sub></i> control how fast each chemical diffuses, <i>F</i> is
+                the feed rate of <i>U</i>, and <i>k</i>
+                removes <i>V</i>. The balance between these forces—diffusion, reaction, feed, and decay—creates the wide variety of
+                emergent patterns you can explore here.
+            </p>
+
+            <h3>Controls Overview</h3>
+            <p>Each control affects how the pattern evolves over time:</p>
+
+            <ul>
+                <li><strong>Feed Rate (F):</strong> Adds more <i>U</i> into the system. Higher values tend to create stripes and
+                    waves; lower values produce isolated spots or chaotic patterns.</li>
+
+                <li><strong>Kill Rate (k):</strong> Removes <i>V</i>. Increasing <i>k</i> breaks up patterns or makes them sparser;
+                    lowering <i>k</i> allows larger clusters of <i>V</i> to form.</li>
+
+                <li><strong>D<sub>U</sub> and D<sub>V</sub>:</strong> Diffusion rates for <i>U</i> and <i>V</i>. Changing these
+                    alters how quickly patterns spread or sharpen. Usually,
+                    <i>V</i> diffuses faster to allow stable Turing patterns to form.
+                </li>
+
+                <li><strong>Time Step (dt):</strong> Controls the numerical timestep. Larger values make the simulation evolve
+                    faster but may become unstable; smaller values produce smoother motion.</li>
+
+                <li><strong>Noise:</strong> Adds random fluctuations to the chemical concentrations, introducing variability and helping to break symmetry in the patterns.</li>
+
+                <li><strong>Color Map:</strong> Adjusts how <i>U</i> and <i>V</i> concentrations are visualized, helping emphasize
+                    edges, gradients, or wavefronts.</li>
+            </ul>
+
+            <p>
+                Together, these controls let you explore the full range of behaviors predicted by the Gray–Scott model and the
+                broader
+                family of Turing pattern–forming systems.
+            </p>
+        </div>
+    </div>
+    <div id="status">Initializing...</div>
+
+    <script src="https://unpkg.com/grapick"></script>
+    <script type="module" src="index.js"></script>
+</body>
+<script src="https://cdn.jsdelivr.net/gh/MarketingPipeline/Markdown-Tag/markdown-tag-GitHub.js"></script>
+</html>

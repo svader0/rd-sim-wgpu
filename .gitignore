@@ -1,0 +1,25 @@
+# Rust build artifacts
+/target
+
+# Trunk build output
+/dist
+
+# WASM package output (if you want to regenerate)
+# /pkg
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
