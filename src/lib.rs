@@ -89,7 +89,6 @@ struct GrayScottApp {
     mouse_down: bool,
     steps_per_frame: u32,
     color_palette: u32,
-    invert_palette: bool,
     
     // View controls
     zoom: f32,
@@ -390,15 +389,11 @@ impl GrayScottApp {
         struct PaintParams {
             center_x: f32,
             center_y: f32,
-            radius: f32,
-            _padding: f32,
         }
 
         let paint_params = PaintParams {
             center_x: 0.0,
             center_y: 0.0,
-            radius: 10.0,
-            _padding: 0.0,
         };
 
         let paint_params_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -721,18 +716,17 @@ impl GrayScottApp {
             delta_time: 1.0,
             noise_strength: 0.0,
             kernel_type: 0,         // Default kernel
-            boundary_mode: 0,       // Wrap (toroidal)
+            boundary_mode: 2,       // Reflect (Mirror)
             map_mode: false,
             paused: false,
             mouse_pos: None,
             mouse_down: false,
             steps_per_frame: 8,
             color_palette: 0,
-            invert_palette: false,
             zoom: 1.0,
             pan_x: 0.0,
             pan_y: 0.0,
-            emboss_enabled: false,
+            emboss_enabled: true,
         })
     }
 
@@ -774,15 +768,11 @@ impl GrayScottApp {
         struct PaintParams {
             center_x: f32,
             center_y: f32,
-            radius: f32,
-            _padding: f32,
         }
 
         let paint_params = PaintParams {
             center_x: grid_x as f32,
             center_y: grid_y as f32,
-            radius: 1.0,  // Fixed small brush size
-            _padding: 0.0,
         };
 
         self.queue.write_buffer(
@@ -1084,18 +1074,6 @@ pub fn set_color_palette(palette: u32) {
 }
 
 #[wasm_bindgen]
-pub fn set_invert_palette(invert: bool) {
-    APP.with(|a| {
-        if let Some(app) = a.borrow().as_ref() {
-            let mut app_mut = app.borrow_mut();
-            app_mut.invert_palette = invert;
-            
-            update_render_params(&mut app_mut);
-        }
-    });
-}
-
-#[wasm_bindgen]
 pub fn set_kernel(kernel: u32) {
     APP.with(|a| {
         if let Some(app) = a.borrow().as_ref() {
@@ -1200,7 +1178,6 @@ fn update_render_params(app: &mut GrayScottApp) {
     struct RenderParams {
         color_palette: u32,
         emboss_enabled: u32,
-        invert_palette: u32,
         boundary_mode: u32,
         zoom: f32,
         pan_x: f32,
@@ -1210,7 +1187,6 @@ fn update_render_params(app: &mut GrayScottApp) {
     let render_params = RenderParams {
         color_palette: app.color_palette,
         emboss_enabled: if app.emboss_enabled { 1 } else { 0 },
-        invert_palette: if app.invert_palette { 1 } else { 0 },
         boundary_mode: app.boundary_mode,
         zoom: app.zoom,
         pan_x: app.pan_x,

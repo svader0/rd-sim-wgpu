@@ -1,6 +1,3 @@
-// Render shader for visualizing the Gray-Scott simulation
-// Reads V channel and converts to color
-
 struct VertexOutput {
     @builtin(position) position: vec4<f32>,
     @location(0) tex_coords: vec2<f32>,
@@ -20,13 +17,23 @@ fn vs_main(@builtin(vertex_index) vertex_index: u32) -> VertexOutput {
     return out;
 }
 
+/*
+  ___________________________
+< Shader?! I hardly know her! >
+  ---------------------------
+         \   ^__^ 
+          \  (oo)\_______
+             (__)\       )\/\\
+                 ||----w |
+                 ||     ||
+*/
+
 @group(0) @binding(0) var reaction_texture: texture_2d<f32>;
-@group(0) @binding(1) var texture_sampler: sampler;
+
 
 struct RenderParams {
     color_palette: u32,
     emboss_enabled: u32,
-    invert_palette: u32,
     boundary_mode: u32,
     zoom: f32,
     pan_x: f32,
@@ -90,35 +97,23 @@ fn sample_gradient(t: f32) -> vec3<f32> {
 }
 
 // Color mapping for V channel
-fn value_to_color(v: f32, invert: bool) -> vec3<f32> {
-    var val = clamp(v, 0.0, 1.0);
-    
-    // Invert if requested
-    if invert {
-        val = 1.0 - val;
-    }
-    
-    return sample_gradient(val);
+fn value_to_color(v: f32) -> vec3<f32> {
+
+    return sample_gradient(v);
 }
-        // Rainbow: Full spectrum from dark purple through vibrant colors
+
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     // Apply zoom and pan to texture coordinates
     let zoomed_coords = (in.tex_coords - vec2<f32>(0.5, 0.5)) / render_params.zoom + vec2<f32>(0.5, 0.5);
     let panned_coords = zoomed_coords + vec2<f32>(render_params.pan_x, render_params.pan_y);
     
-    // Get texture dimensions
     let tex_size = textureDimensions(reaction_texture);
     
-    // High-quality bicubic-style sampling with 9 samples for sharper detail
     let pixel_coord = panned_coords * vec2<f32>(tex_size) - vec2<f32>(0.5, 0.5);
     let base_coord = floor(pixel_coord);
     let frac = pixel_coord - base_coord;
     
-    // Smoother interpolation curve (smoothstep for better visual quality)
-    let smooth_frac = frac * frac * (3.0 - 2.0 * frac);
-    
-    // Sample 3x3 grid of neighboring pixels for better quality
     var sum = 0.0;
     var weight_sum = 0.0;
     
@@ -133,8 +128,8 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
             if render_params.boundary_mode == 0u {
                 // Wrap (toroidal topology)
                 final_coord = vec2<i32>(
-                    (coord.x + i32(tex_size.x)) % i32(tex_size.x),
-                    (coord.y + i32(tex_size.y)) % i32(tex_size.y)
+                    ((coord.x % i32(tex_size.x)) + i32(tex_size.x)) % i32(tex_size.x),
+                    ((coord.y % i32(tex_size.y)) + i32(tex_size.y)) % i32(tex_size.y)
                 );
             } else {
                 // Clamp or Reflect - show black outside bounds
@@ -148,6 +143,7 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
             let weight = exp(-dot(dist, dist) * 2.0);
             
             var sample_val = 0.0;
+            // If we're not out of bounds, sample the texture; otherwise, we just show black.
             if !out_of_bounds {
                 sample_val = textureLoad(reaction_texture, final_coord, 0).g;
             }
@@ -157,9 +153,16 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     }
     
     let v = sum / weight_sum;
-    var color = value_to_color(v, render_params.invert_palette != 0u);
+    var color = value_to_color(v);
     
-    // Apply realistic liquid emboss effect if enabled
+    /*
+        EMBOSSING! --------------------
+
+        This is where the magic happens. It's mostly pieced together from stuff I found online,
+        but we're basically calculating the surface normal based on the color gradients, then using that
+        normal to do some simple Phong lighting with a couple light sources to give it a 3D embossed look.
+
+    */
     if render_params.emboss_enabled != 0u {
         // For non-wrap modes, skip emboss near edges to prevent artifacts
         var apply_emboss = true;
@@ -210,19 +213,18 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
             let dx = (val_right - val_left) * 0.5;
             let dy = (val_up - val_down) * 0.5;
             
-            // Create normal vector - stronger gradients for pronounced 3D effect
+            // Create normal vector
             let normal = normalize(vec3<f32>(-dx * 10.0, -dy * 10.0, 1.0));
             
-            // Multiple light sources for realistic liquid appearance
-            // Key light from top-right (main light)
+            // Light from top-right (main light)
             let key_light = normalize(vec3<f32>(0.6, 0.3, 1.0));
             let key_diffuse = max(dot(normal, key_light), 0.0);
             
-            // Rim light from left (adds depth)
+            // Rim light from left-back for edge highlights (oooOOOooo!)
             let rim_light = normalize(vec3<f32>(-0.8, 0.2, 0.5));
             let rim_diffuse = max(dot(normal, rim_light), 0.0);
             
-            // STRONG specular highlight for liquid shine
+            // STRONG specular highlight for making it look like wet/shiny liquid
             let view_dir = vec3<f32>(0.0, 0.0, 1.0); // Camera looking straight down
             let reflect_dir = reflect(-key_light, normal);
             let specular = pow(max(dot(view_dir, reflect_dir), 0.0), 64.0); // High shininess

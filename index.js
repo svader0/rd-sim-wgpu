@@ -1,4 +1,4 @@
-import init, { init_app, render_frame, set_feed_rate, set_kill_rate, set_paused, reset, handle_mouse_down, handle_mouse_up, handle_mouse_move, apply_preset, set_color_palette, set_kernel, set_zoom, set_pan, clear_canvas, add_random_blobs, set_emboss, set_invert_palette, set_map_mode, set_diffusion_u, set_diffusion_v, set_steps_per_frame, set_noise, set_boundary, set_gradient } from './pkg/gray_scott.js';
+import init, { init_app, render_frame, set_feed_rate, set_kill_rate, set_paused, reset, handle_mouse_down, handle_mouse_up, handle_mouse_move, apply_preset, set_color_palette, set_kernel, set_zoom, set_pan, clear_canvas, add_random_blobs, set_emboss, set_map_mode, set_diffusion_u, set_diffusion_v, set_steps_per_frame, set_noise, set_boundary, set_gradient } from './pkg/gray_scott.js';
 
 // Tab switching functionality
 const tabs = document.querySelectorAll('.tab');
@@ -57,6 +57,12 @@ const status = document.getElementById('status');
 let isPaused = false;
 let isMouseDown = false;
 
+// FPS tracking
+let lastFrameTime = performance.now();
+let frameCount = 0;
+let fps = 0;
+const fpsDisplay = document.getElementById('fps-display');
+
 function showStatus(msg) {
     status.textContent = msg;
     status.style.display = 'block';
@@ -73,6 +79,9 @@ async function start() {
 
         // Apply initial gradient to shader now that WASM is loaded
         updateGradientFromGrapick();
+        
+        // Mark WASM as initialized so resize can work
+        wasmInitialized = true;
 
         showStatus('Ready!');
         requestAnimationFrame(renderLoop);
@@ -85,6 +94,18 @@ async function start() {
 function renderLoop() {
     try {
         render_frame();
+        
+        // Calculate FPS
+        frameCount++;
+        const currentTime = performance.now();
+        const elapsed = currentTime - lastFrameTime;
+        
+        if (elapsed >= 1000) { // Update every second
+            fps = Math.round((frameCount * 1000) / elapsed);
+            fpsDisplay.textContent = `FPS: ${fps}`;
+            frameCount = 0;
+            lastFrameTime = currentTime;
+        }
     } catch (e) {
         console.error('Render error:', e);
     }
@@ -245,8 +266,6 @@ function updateGradientFromGrapick() {
         const pos = handler.getPosition() / 100.0;
         let color = handler.getColor();
 
-        console.log(`Handler ${idx}: position=${pos}, color type=${typeof color}, color=`, color);
-
         let r = 0, g = 0, b = 0;
 
         // Grapick can return color in various formats, try to parse intelligently
@@ -330,11 +349,6 @@ gradientPresetSelect.addEventListener('change', (e) => {
 // Emboss control
 embossCheckbox.addEventListener('change', (e) => {
     set_emboss(e.target.checked);
-});
-
-// Invert palette control
-invertPaletteCheckbox.addEventListener('change', (e) => {
-    set_invert_palette(e.target.checked);
 });
 
 // Diffusion U control
@@ -614,6 +628,8 @@ canvas.addEventListener('mouseleave', () => {
 
 // Handle canvas resize
 let resizeTimeout;
+let wasmInitialized = false;
+
 async function resizeCanvas() {
     const displayWidth = canvas.clientWidth;
     const displayHeight = canvas.clientHeight;
@@ -622,16 +638,19 @@ async function resizeCanvas() {
         canvas.width = displayWidth;
         canvas.height = displayHeight;
         
-        // Debounce the reinitialization to avoid too many calls
-        clearTimeout(resizeTimeout);
-        resizeTimeout = setTimeout(async () => {
-            try {
-                await init_app('canvas');
-                updateGradientFromGrapick();
-            } catch (e) {
-                console.error('Resize reinit error:', e);
-            }
-        }, 250);
+        // Only reinitialize if WASM is already loaded
+        if (wasmInitialized) {
+            // Debounce the reinitialization to avoid too many calls
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(async () => {
+                try {
+                    await init_app('canvas');
+                    updateGradientFromGrapick();
+                } catch (e) {
+                    console.error('Resize reinit error:', e);
+                }
+            }, 250);
+        }
     }
 }
 

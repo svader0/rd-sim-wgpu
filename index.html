@@ -6,16 +6,26 @@
     <title>Gray-Scott Reaction-Diffusion</title>
     <link rel="stylesheet" href="https://unpkg.com/grapick/dist/grapick.min.css">
     <link rel="stylesheet" href="static/styles.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
-        onload="renderMathInElement(document.body);"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.25/dist/katex.min.css"
+    integrity="sha384-WcoG4HRXMzYzfCgiyfrySxx90XSl2rxY5mnVY5TwtWE6KLrArNKn0T/mOgNL0Mmi" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.25/dist/katex.min.js"
+    integrity="sha384-J+9dG2KMoiR9hqcFao0IBLwxt6zpcyN68IgwzsCSkbreXUjmNVRhPFTssqdSGjwQ"
+    crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.25/dist/contrib/auto-render.min.js"
+    integrity="sha384-hCXGrW6PitJEwbkoStFjeJxv+fSOOQKOPbJxSfM6G5sWZjAyWhXiTIIAmQqnlLlh" crossorigin="anonymous"
+    onload="renderMathInElement(document.body);"></script>
 
 </head>
 <body>
     <div class="canvas-wrapper">
         <canvas id="canvas" width="800" height="800"></canvas>
         <div id="map-labels" class="map-labels" style="display: none;"></div>
+        <div class="info-overlay">
+            <div id="fps-display">FPS: --</div>
+            <a href="https://github.com/svader0/rd-sim-wgpu" target="_blank" rel="noopener noreferrer">
+                <span>⭐</span> GitHub
+            </a>
+        </div>
     </div>
     
     <div class="sidebar">
@@ -39,36 +49,47 @@
                 <option value="0.016,0.055">Zebrafish (F=0.016, k=0.055)</option>
                 <option value="0.030,0.060">Solitons (F=0.030, k=0.060)</option>
                 <option value="0.029,0.057">Maze (F=0.029, k=0.057)</option>
-            </select>
+            </select> 
+        </div>
+
+        <div class="info">
+            <strong>How to use:</strong><br>
+            - Click and drag on the canvas to add reactants<br>
+            - Choose presets to see different patterns<br>
+            - Use WASD keys to pan, or mouse wheel to zoom<br>
         </div>
 
         <h2>Parameters</h2>
         <div class="control-group">
             <label>
-                Feed Rate (F): <span class="value-display" id="feed-value">0.055</span>
+                Feed Rate (\(F\)): <span class="value-display" id="feed-value">0.055</span>
             </label>
             <input type="range" id="feed" min="0" max="0.1" step="0.0001" value="0.055">
+            <small class="param-hint">Rate at which chemical U is fed into the system</small>
         </div>
 
         <div class="control-group">
             <label>
-                Kill Rate (k): <span class="value-display" id="kill-value">0.062</span>
+                Kill Rate (\(k\)): <span class="value-display" id="kill-value">0.062</span>
             </label>
             <input type="range" id="kill" min="0" max="0.08" step="0.0001" value="0.062">
+            <small class="param-hint">Rate at which chemical V is removed from the system</small>
         </div>
 
         <div class="control-group">
             <label>
-                Diffusion U (DU): <span class="value-display" id="du-value">1.0</span>
+                Diffusion U (\(D_U\)): <span class="value-display" id="du-value">1.0</span>
             </label>
             <input type="range" id="du" min="0.1" max="1.5" step="0.01" value="1.0">
+            <small class="param-hint">How fast chemical U spreads across the surface</small>
         </div>
 
         <div class="control-group">
             <label>
-                Diffusion V (DV): <span class="value-display" id="dv-value">0.5</span>
+                Diffusion V (\(D_V\)): <span class="value-display" id="dv-value">0.5</span>
             </label>
             <input type="range" id="dv" min="0.1" max="1.0" step="0.01" value="0.5">
+            <small class="param-hint">How fast chemical V spreads across the surface</small>
         </div>
 
         <div class="control-group">
@@ -76,6 +97,7 @@
                 Speed (steps/frame): <span class="value-display" id="speed-value">8</span>
             </label>
             <input type="range" id="speed" min="1" max="32" step="1" value="8">
+            <small class="param-hint">Number of simulation steps computed per frame</small>
         </div>
 
         <div class="control-group">
@@ -83,27 +105,30 @@
                 Noise Injection: <span class="value-display" id="noise-value">0.00</span>
             </label>
             <input type="range" id="noise" min="0" max="0.01" step="0.0001" value="0">
+            <small class="param-hint">Applies random noise at each step</small>
         </div>
 
         <div class="control-group">
             <label>Boundary Condition</label>
-            <select id="boundary" required="true" >
+            <select id="boundary">
+                <option value="2">Reflect (Mirror)</option>
                 <option value="1">Clamp (Fixed Edges)</option>
                 <option value="0">Wrap (Toroidal)</option>
-                <option value="2">Reflect (Mirror)</option>
             </select>
+            <small class="param-hint">How chemicals behave at the edges of the grid</small>
         </div>
 
         <div class="control-group">
             <label style="display: flex; align-items: center; gap: 8px;">
                 <input type="checkbox" id="map-mode" style="width: auto; height: auto;">
                 <strong>Map Mode (F/k gradients)</strong>
+                <small class="param-hint">Varies feed and kill rates across the grid to visualize effects of different k and F values</small>
             </label>
         </div>
 
         <h2>Visuals</h2>
         <div class="control-group">
-            <label>Laplacian Kernel</label>
+            <label>Laplacian Stencil</label>
             <select id="kernel">
                 <option value="0">Default (9-point)</option>
                 <option value="1">Cross (4-point)</option>
@@ -111,6 +136,7 @@
                 <option value="3">Spiral (5x5 asymmetric)</option>
                 <option value="4">Other</option>
             </select>
+            <small class="param-hint">Pattern used to calculate diffusion from neighbors</small>
         </div>
 
         <div class="control-group">
@@ -123,11 +149,13 @@
                 <option value="neon">Neon Dreams</option>
                 <option value="forest">Forest Twilight</option>
             </select>
+            <small class="param-hint">Pre-made color schemes for visualization</small>
         </div>
 
         <div class="control-group">
             <label>Color Gradient</label>
             <div id="grapick-container" style="margin-top: 8px;"></div>
+            <small class="param-hint">Custom gradient editor: drag handles or add new colors</small>
         </div>
 
         <div class="control-group">
@@ -135,13 +163,7 @@
                 <input type="checkbox" id="emboss" style="width: auto; height: auto;" checked>
                 3D Emboss Effect
             </label>
-        </div>
-
-        <div class="control-group">
-            <label style="display: flex; align-items: center; gap: 8px;">
-                <input type="checkbox" id="invert-palette" style="width: auto; height: auto;">
-                Invert Palette
-            </label>
+            <small class="param-hint">Adds depth by simulating lighting and shadows</small>
         </div>
 
         <div class="control-group">
@@ -149,6 +171,7 @@
                 Zoom: <span class="value-display" id="zoom-value">1.0x</span>
             </label>
             <input type="range" id="zoom" min="1.0" max="10" step="0.5" value="1.0">
+            <small class="param-hint">Magnification level (use mouse wheel to adjust)</small>
         </div>
 
         <div class="control-group">
@@ -156,6 +179,7 @@
                 Pan X: <span class="value-display" id="pan-x-value">0.0</span>
             </label>
             <input type="range" id="pan-x" min="-1" max="1" step="0.01" value="0">
+            <small class="param-hint">Horizontal view position (use A/D keys)</small>
         </div>
 
         <div class="control-group">
@@ -163,6 +187,7 @@
                 Pan Y: <span class="value-display" id="pan-y-value">0.0</span>
             </label>
             <input type="range" id="pan-y" min="-1" max="1" step="0.01" value="0">
+            <small class="param-hint">Vertical view position (use W/S keys)</small>
         </div>
 
         <h2>Controls</h2>
@@ -178,101 +203,79 @@
         <div class="button-group" style="margin-top: 8px;">
             <button id="random">🎲 Seed</button>
         </div>
-
-            <div class="info">
-                <strong>How to use:</strong><br>
-                • Click and drag on the canvas to add reactants<br>
-                • Choose presets to see different patterns<br>
-                • Adjust feed/kill rates for custom patterns<br>
-                • Pause to inspect current state<br>
-                <br>
-                <strong>GPU Accelerated</strong> with WebGPU compute shaders
-            </div>
         </div>
         
         <div id="about-tab" class="tab-content about-content">
             <h2>Introduction</h2>
             <p>
-                This simulation implements the Gray–Scott model, a classical reaction–diffusion system describing two chemical
-                species,
-                <i>U</i> and <i>V</i>, as they spread and interact across a surface. The model uses two partial differential
-                equations to track how
-                their concentrations change over time through:
+                The Gray–Scott model is a reaction–diffusion system used to look at how simple chemical interactions can generate
+                complex patterns. It describes the evolution of two chemical species, <i>U</i> and <i>V</i>, diffusing across a surface while undergoing an autocatalytic reaction. 
+                Unlike linear diffusion equations, which smooth out disturbances, the Gray–Scott system is highly nonlinear and can produce stable spots, stripes, waves, and
+                other very interesting <a href="https://en.wikipedia.org/wiki/Turing_pattern#">Turing patterns</a>.
             </p>
-
-            <ul>
-                <li><strong>Diffusion:</strong> Each chemical spreads out, smoothing differences across space.</li>
-                <li><strong>Reaction:</strong> The chemicals interact through an autocatalytic process where <i>V</i> helps create
-                    more of itself by consuming <i>U</i>.</li>
-            </ul>
-
             <p>
-                The chemistry behind the model comes from a simplified autocatalytic reaction:
+                Because of its non-linear nature, we must simulate the system numerically. Here, we simulate it on a 2D grid using 
+                finite difference approximations for the diffusion terms
+                and explicit time-stepping for the reactions. Almost like a cellular automaton, but instead of
+                having discrete states, each cell holds continuous concentration values for chemicals <i>U</i> and <i>V</i>.
             </p>
-
-            <p style="margin-left: 1rem;">
-                <code>U + 2V → 3V</code> &nbsp;&nbsp; (self-amplification)<br>
-                <code>V → P</code> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (decay into an inert product)
-            </p>
-
+            <hr>
+            <h2>Reaction–Diffusion Model</h2>
             <p>
-                In the 1980s, Peter Gray and Stephen K. Scott extended this reaction with diffusion and continuous “feed” and
-                “removal”
-                terms, allowing the system to form stable, repeating spatial structures. These types of patterns are known as
-                <strong>Turing patterns</strong>—named after Alan Turing, who first proposed that simple chemical interactions
-                coupled with diffusion
-                could spontaneously generate stripes, spots, and other biological patterns.
+                The Gray–Scott system models a simplified autocatalytic reaction:
+                <br><br>
+                <i>U + 2V → 3V</i> (autocatalysis)<br>
+                <i>V → P</i> (decay)<br>
+                <br>
+                Here, <i>U</i> is fed into the system at a constant rate, while <i>V</i> is the reactant that autocatalytically converts <i>U</i> into more of itself. Because of
+                these interactions and imbalances, small changes in the concentrations of <i>U</i> and <i>V</i> can grow and lead to complex patterns.
+                <br>When diffusion is included and the system is treated as a continuous 2D medium, the concentrations
+                <i>U(x,y,t)</i> and <i>V(x,y,t)</i>&mdash;meaning 'the concentration of U or V at position (<i>x,y</i>) and time <i>t</i>'&mdash;evolve according to the following pair of partial differential equations:
+                <div>
+                    $$
+                    \frac{\partial U}{\partial t}
+                    = D_U \nabla^2 U - UV^2 + F(1 - U)
+                    $$
+                </div>
+                
+                <div>
+                    $$
+                    \frac{\partial V}{\partial t}
+                    = D_V \nabla^2 V + UV^2 - (F + k)V
+                    $$
+                </div>
+                , where <i>D<sub>U</sub></i> and <i>D<sub>V</sub></i> are the diffusion rates of species <i>U</i> and <i>V</i>, <i>F</i> is the feed rate of <i>U</i>; and <i>k</i> is the kill rate of <i>V</i>.
+                \(\nabla^2\) is the Laplacian operator, which captures how the concentration at a point differs from its neighbors, which is how we derive diffusion.
             </p>
-
-            <div>
-                $$
-                \frac{\partial U}{\partial t}
-                = D_U \nabla^2 U - UV^2 + F(1 - U)
-                $$
-            </div>
-
-            <div>
-                $$
-                \frac{\partial V}{\partial t}
-                = D_V \nabla^2 V + UV^2 - (F + k)V
-                $$
-            </div>
-
             <p>
-                In this model, <i>D<sub>U</sub></i> and <i>D<sub>V</sub></i> control how fast each chemical diffuses, <i>F</i> is
-                the feed rate of <i>U</i>, and <i>k</i>
-                removes <i>V</i>. The balance between these forces—diffusion, reaction, feed, and decay—creates the wide variety of
-                emergent patterns you can explore here.
+                The first term, \(\ D_\_ \nabla^2 U \ \), is what represents our diffusion, and is what causes the chemicals to spread out over time.
+                
+                The second term, \(\ \pm UV^2 \ \), represents the autocatalytic reaction where species <i>U</i> is consumed to produce more of species <i>V</i>. 
+
+                The third term in each equation represents the feed and removal rate of chemicals from the system. This maintains a non-equilibrium state, which is necessary for forming those interesting patterns.
             </p>
-
-            <h3>Controls Overview</h3>
-            <p>Each control affects how the pattern evolves over time:</p>
-
-            <ul>
-                <li><strong>Feed Rate (F):</strong> Adds more <i>U</i> into the system. Higher values tend to create stripes and
-                    waves; lower values produce isolated spots or chaotic patterns.</li>
-
-                <li><strong>Kill Rate (k):</strong> Removes <i>V</i>. Increasing <i>k</i> breaks up patterns or makes them sparser;
-                    lowering <i>k</i> allows larger clusters of <i>V</i> to form.</li>
-
-                <li><strong>D<sub>U</sub> and D<sub>V</sub>:</strong> Diffusion rates for <i>U</i> and <i>V</i>. Changing these
-                    alters how quickly patterns spread or sharpen. Usually,
-                    <i>V</i> diffuses faster to allow stable Turing patterns to form.
-                </li>
-
-                <li><strong>Time Step (dt):</strong> Controls the numerical timestep. Larger values make the simulation evolve
-                    faster but may become unstable; smaller values produce smoother motion.</li>
-
-                <li><strong>Noise:</strong> Adds random fluctuations to the chemical concentrations, introducing variability and helping to break symmetry in the patterns.</li>
-
-                <li><strong>Color Map:</strong> Adjusts how <i>U</i> and <i>V</i> concentrations are visualized, helping emphasize
-                    edges, gradients, or wavefronts.</li>
-            </ul>
-
+            <h2>Numerical Integration</h2>
+            <p>Because the system has no closed-form solution, we approximate the PDEs to simulate the reaction-diffusion process over discrete time steps.
+                We represent the 2D surface as a grid of cells, where each cell holds the 
+                information about the concentrations of <i>U</i> and <i>V</i> present at that location. The Laplacian operator \(\ \nabla^2\ \) is approximated using a finite difference stencil.
+                This simulation uses a 9-point stencil for better accuracy, but other stencils (like 4-point cross or even a diagonal) can also be used.
+            </p>
             <p>
-                Together, these controls let you explore the full range of behaviors predicted by the Gray–Scott model and the
-                broader
-                family of Turing pattern–forming systems.
+                To evolve the system in time, we step time by a small increment via the forward Euler method:
+                <div style="font-size: 12px;">
+                \[
+                    U^{t+\Delta t}_{i,j} = U^t_{i,j} + \Delta t \left( D_U \nabla^2 U^t_{i,j} - U^t_{i,j} (V^t_{i,j})^2 + F(1 - U^t_{i,j}) \right)
+                \]
+                \[
+                    V^{t+\Delta t}_{i,j} = V^t_{i,j} + \Delta t \left( D_V \nabla^2 V^t_{i,j} + U^t_{i,j} (V^t_{i,j})^2 - (F + k) V^t_{i,j} \right)
+                \]
+                </div>
+
+                Or, in regular people terms, we compute the new concentration of <i>U</i> and <i>V</i> at each grid cell (<i>i,j</i>) by taking the current concentration, 
+                adding the effects of diffusion (via the Laplacian), the reaction term, and the feed/kill terms, and then just scale it up by a small time step \(\ \Delta t\ \) for every 
+                iteration.
+                Because each grid point depends only on its immediate neighbors, the computation is highly parallelizable.
+                Therefore, this simulation uses GPU acceleration via WebGPU compute shaders to efficiently compute the updates for all grid cells simultaneously. Neat!
             </p>
         </div>
     </div>
