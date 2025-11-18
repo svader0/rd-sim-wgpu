@@ -1,4 +1,4 @@
-import init, { init_app, render_frame, set_feed_rate, set_kill_rate, set_paused, reset, handle_mouse_down, handle_mouse_up, handle_mouse_move, apply_preset, set_color_palette, set_kernel, set_zoom, set_pan, clear_canvas, add_random_blobs, set_emboss, set_map_mode, set_diffusion_u, set_diffusion_v, set_steps_per_frame, set_noise, set_boundary, set_gradient } from './pkg/gray_scott.js';
+import init, { init_app, render_frame, set_feed_rate, set_kill_rate, set_paused, reset, handle_mouse_down, handle_mouse_up, handle_mouse_move, apply_preset, set_color_palette, set_kernel, set_zoom, set_pan, clear_canvas, add_random_blobs, set_emboss, set_map_mode, set_diffusion_u, set_diffusion_v, set_steps_per_frame, set_noise, set_boundary, set_gradient } from './pkg/rd_sim_wgpu.js';
 
 // Tab switching functionality
 const tabs = document.querySelectorAll('.tab');
