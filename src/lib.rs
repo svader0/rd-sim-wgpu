@@ -545,8 +545,8 @@ impl GrayScottApp {
         struct RenderParams {
             color_palette: u32,
             emboss_enabled: u32,
-            invert_palette: u32,
             boundary_mode: u32,
+            _padding: u32,
             zoom: f32,
             pan_x: f32,
             pan_y: f32,
@@ -554,9 +554,9 @@ impl GrayScottApp {
 
         let render_params = RenderParams {
             color_palette: 0,
-            emboss_enabled: 0,
-            invert_palette: 0,
+            emboss_enabled: 1,  // Default to enabled
             boundary_mode: 0,
+            _padding: 0,
             zoom: 1.0,
             pan_x: 0.0,
             pan_y: 0.0,
@@ -1179,6 +1179,7 @@ fn update_render_params(app: &mut GrayScottApp) {
         color_palette: u32,
         emboss_enabled: u32,
         boundary_mode: u32,
+        _padding: u32,
         zoom: f32,
         pan_x: f32,
         pan_y: f32,
@@ -1188,6 +1189,7 @@ fn update_render_params(app: &mut GrayScottApp) {
         color_palette: app.color_palette,
         emboss_enabled: if app.emboss_enabled { 1 } else { 0 },
         boundary_mode: app.boundary_mode,
+        _padding: 0,
         zoom: app.zoom,
         pan_x: app.pan_x,
         pan_y: app.pan_y,

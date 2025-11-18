@@ -35,6 +35,7 @@ struct RenderParams {
     color_palette: u32,
     emboss_enabled: u32,
     boundary_mode: u32,
+    _padding: u32,
     zoom: f32,
     pan_x: f32,
     pan_y: f32,
