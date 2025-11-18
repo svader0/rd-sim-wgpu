@@ -2,9 +2,7 @@
 
 A GPU-accelerated WebGPU implementation of the Gray-Scott reaction-diffusion system, capable of generating complex spatial patterns from simple chemical interactions. Compiles to WebAssembly for near-native browser performance.
 
-image 1:
-![Example GIF of usage](https://github.com/svader0/rd-sim-wgpu/tree/master/static/image2.gif)
-![Example photo of pattern](https://github.com/svader0/rd-sim-wgpu/tree/master/static/image1.png)
+<img src="https://raw.githubusercontent.com/svader0/rd-sim-wgpu/refs/heads/master/static/image2.gif" width="40%"><img src="https://raw.githubusercontent.com/svader0/rd-sim-wgpu/refs/heads/master/static/image1.png" width="40%">
 
 ## Introduction
 
