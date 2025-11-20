@@ -39,7 +39,7 @@ Where:
 
 ### Understanding the Terms
 
-1. **Diffusion term** ($D_\_ \nabla^2 U$): Represents how chemicals spread out over time, smoothing concentration differences.
+1. **Diffusion term** ($D_u \nabla^2 U$): Represents how chemicals spread out over time, smoothing concentration differences.
 2. **Reaction term** $(\pm UV^2)$: Represents the autocatalytic reaction where species *U* is consumed to produce more of species *V*.
 3. **Feed/Kill terms**: Represents the feed and removal rate of chemicals from the system. This maintains a non-equilibrium state, which is necessary for forming those interesting patterns.
 
