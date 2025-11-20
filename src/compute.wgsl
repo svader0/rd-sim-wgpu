@@ -202,10 +202,6 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
         feed = mix(0.010, 0.100, norm_y);  // F: 0.01 to 0.1 along Y
     }
     
-    // Gray-Scott equations:
-    // ∂u/∂t = Du·∇²u - u·v² + F·(1-u)
-    // ∂v/∂t = Dv·∇²v + u·v² - (F+k)·v
-    
     let uvv = u * v * v;
     
     let du_dt = params.diffuse_u * laplacian_u - uvv + feed * (1.0 - u);

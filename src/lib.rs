@@ -86,6 +86,7 @@ struct GrayScottApp {
     map_mode: bool,
     paused: bool,
     mouse_pos: Option<(f32, f32)>,
+    prev_mouse_pos: Option<(f32, f32)>,
     mouse_down: bool,
     steps_per_frame: u32,
     color_palette: u32,
@@ -720,6 +721,7 @@ impl GrayScottApp {
             map_mode: false,
             paused: false,
             mouse_pos: None,
+            prev_mouse_pos: None,
             mouse_down: false,
             steps_per_frame: 8,
             color_palette: 0,
@@ -1022,6 +1024,8 @@ pub fn handle_mouse_down(x: f32, y: f32) {
         if let Some(app) = a.borrow().as_ref() {
             let mut app = app.borrow_mut();
             app.mouse_down = true;
+            app.mouse_pos = Some((x, y));
+            app.prev_mouse_pos = Some((x, y));
             app.paint_at(x, y);
         }
     });
@@ -1031,7 +1035,9 @@ pub fn handle_mouse_down(x: f32, y: f32) {
 pub fn handle_mouse_up() {
     APP.with(|a| {
         if let Some(app) = a.borrow().as_ref() {
-            app.borrow_mut().mouse_down = false;
+            let mut app = app.borrow_mut();
+            app.mouse_down = false;
+            app.prev_mouse_pos = None;
         }
     });
 }
@@ -1042,8 +1048,28 @@ pub fn handle_mouse_move(x: f32, y: f32) {
         if let Some(app) = a.borrow().as_ref() {
             let mut app = app.borrow_mut();
             app.mouse_pos = Some((x, y));
+            
             if app.mouse_down {
-                app.paint_at(x, y);
+                // Interpolate between previous and current position for continuous lines
+                if let Some((prev_x, prev_y)) = app.prev_mouse_pos {
+                    let dx = x - prev_x;
+                    let dy = y - prev_y;
+                    let dist = (dx * dx + dy * dy).sqrt();
+                    
+                    // Paint points along the line - about 1 point per 0.01 normalized distance
+                    let steps = (dist * 50.0).ceil().max(1.0).min(20.0) as i32;
+                    
+                    for i in 1..=steps {
+                        let t = i as f32 / steps as f32;
+                        let interp_x = prev_x + dx * t;
+                        let interp_y = prev_y + dy * t;
+                        app.paint_at(interp_x, interp_y);
+                    }
+                } else {
+                    app.paint_at(x, y);
+                }
+                
+                app.prev_mouse_pos = Some((x, y));
             }
         }
     });

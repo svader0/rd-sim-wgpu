@@ -178,49 +178,51 @@ grapick.setColorPicker(handler => {
 const gradientPresets = {
     rainbow: [
         { pos: 0, color: '#330033' },
-        { pos: 20, color: '#8000ff' },
-        { pos: 40, color: '#0080ff' },
-        { pos: 60, color: '#00ffcc' },
-        { pos: 80, color: '#ff4d00' },
-        { pos: 100, color: '#ff0000' }
+        { pos: 10, color: '#8000ff' },
+        { pos: 20, color: '#0080ff' },
+        { pos: 30, color: '#00ffcc' },
+        { pos: 45, color: '#ff4d00' },
+        { pos: 70, color: '#ff0000' }
     ],
-    sunset: [
-        { pos: 0, color: '#0a0a2e' },
-        { pos: 25, color: '#6b2d5c' },
-        { pos: 50, color: '#e05297' },
-        { pos: 75, color: '#ff6f3c' },
-        { pos: 100, color: '#ffe66d' }
+    pastel: [
+        { pos: 0, color: '#ff9a9e' },
+        { pos: 10, color: '#fad0c4' },
+        { pos: 30, color: '#fbc2eb' },
+        { pos: 45, color: '#a18cd1' },
+        { pos: 60, color: '#fbc2eb' }
     ],
-    ocean: [
-        { pos: 0, color: '#000428' },
-        { pos: 30, color: '#004e92' },
-        { pos: 55, color: '#0077be' },
-        { pos: 75, color: '#00a8cc' },
-        { pos: 90, color: '#00d9ff' },
-        { pos: 100, color: '#8ef6e4' }
+    olivegarden: [
+        { pos: 0, color: '#606c38' },
+        { pos: 10, color: '#6b8e23' },
+        { pos: 20, color: '#fefae0' },
+        { pos: 40, color: '#dda15e' },
+        { pos: 60, color: '#bc6c25' }
     ],
-    fire: [
-        { pos: 0, color: '#0d0d0d' },
-        { pos: 20, color: '#4a0000' },
-        { pos: 40, color: '#8b0000' },
-        { pos: 60, color: '#ff4500' },
-        { pos: 80, color: '#ffa500' },
-        { pos: 100, color: '#ffff00' }
+    threshold: [
+        { pos: 20, color: '#ffffff' },
+        { pos: 23, color: '#000000' },
     ],
-    neon: [
-        { pos: 0, color: '#0f0f23' },
-        { pos: 25, color: '#ff00ff' },
-        { pos: 50, color: '#00ffff' },
-        { pos: 75, color: '#00ff00' },
-        { pos: 100, color: '#ff1493' }
+    ink: [
+        { pos: 0, color: '#f6eee3' },
+        { pos: 20, color: '#0082ce' },
+        { pos: 40, color: '#0e0955ff' },
+        { pos: 80, color: '#000000' },
     ],
-    forest: [
-        { pos: 0, color: '#0c1445' },
-        { pos: 30, color: '#1a3a2e' },
-        { pos: 50, color: '#0e5e3a' },
-        { pos: 70, color: '#2d8659' },
-        { pos: 85, color: '#76c893' },
-        { pos: 100, color: '#b8f3d8' }
+    globs: [
+        { pos: 0, color: '#8ecae6' },
+        { pos: 20, color: '#219ebc' },
+        { pos: 33, color: '#023047' },
+        { pos: 40, color: '#ffb703' },
+        { pos: 44, color: '#023047' },
+        { pos: 80, color: '#09e2b3ff' },
+    ],
+    earth: [
+        { pos: 0, color: '#6c584c' },
+        { pos: 10, color: '#a98467' },
+        { pos: 30, color: '#adc178' },
+        { pos: 40, color: '#dde5b6' },
+        { pos: 80, color: '#f0ead2' },
+
     ]
 };
 
