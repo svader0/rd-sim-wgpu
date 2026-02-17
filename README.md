@@ -17,7 +17,7 @@ The Gray–Scott system models a simplified autocatalytic reaction:
 - *U + 2V → 3V* (autocatalysis)
 - *V → P* (decay)
 
-Here, *U* is fed into the system at a constant rate, while *V* is the reactant that autocatalytically converts *U* into more of itself. Because of these interactions and imbalances, small changes in the concentrations of *U* and *V* can grow and lead to complex patterns.
+Here, *U* is fed into the system at a constant rate, while *V* is the reactant that autocatalytically converts *U* into more of itself. Because of these interactions, small changes in the concentrations of *U* and *V* can grow and lead to complex patterns.
 
 When diffusion is included and the system is treated as a continuous 2D medium, the concentrations *U(x,y,t)* and *V(x,y,t)*—meaning 'the concentration of U or V at position (*x,y*) and time *t*'—evolve according to the following pair of partial differential equations:
 
@@ -37,11 +37,7 @@ Where:
 - *k* is the kill rate of *V*
 - $\nabla^2$ is the Laplacian operator, which captures how the concentration at a point differs from its neighbors
 
-### Understanding the Terms
-
-1. **Diffusion term** ($D_u \nabla^2 U$): Represents how chemicals spread out over time, smoothing concentration differences.
-2. **Reaction term** $(\pm UV^2)$: Represents the autocatalytic reaction where species *U* is consumed to produce more of species *V*.
-3. **Feed/Kill terms**: Represents the feed and removal rate of chemicals from the system. This maintains a non-equilibrium state, which is necessary for forming those interesting patterns.
+We compute the new concentration of U and V at each grid cell (i,j) by taking the current concentration, adding the effects of diffusion (via the Laplacian), the reaction term, and the feed/kill terms, and then just scale it up by a small time step Δt for every iteration. Each grid point depends only on its immediate neighbors, so the computation is highly parallelizable. This simulation uses GPU acceleration via WebGPU compute shaders to efficiently compute the updates for all grid cells simultaneously. Neat! 
 
 ## Technical Details
 
